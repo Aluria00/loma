@@ -7,7 +7,10 @@ import {
   formatDate,
   formatPct,
   formatShares,
+  formatSignedPct,
+  formatSignedUsd,
   formatUsd,
+  gainPct,
   type CompanyPositionRow,
 } from "@/lib/portfolio";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +23,51 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+
+const HEADERS = [
+  { label: "Company", align: "left" as const },
+  { label: "Structure", align: "left" as const },
+  { label: "Purchased", align: "left" as const },
+  { label: "Shares", align: "right" as const },
+  { label: "Cost", align: "right" as const },
+  { label: "FMV", align: "right" as const },
+  { label: "Wt.", align: "right" as const },
+  { label: "Gain", align: "right" as const },
+];
+
+function GainCell({
+  gain,
+  cost,
+  inactive,
+  size = "sm",
+}: {
+  gain: number;
+  cost: number;
+  inactive: boolean;
+  size?: "sm" | "xs";
+}) {
+  if (inactive) return <span className="text-faint">—</span>;
+
+  const positive = gain >= 0;
+  const pct = cost ? gainPct(gain, cost) : 0;
+  const textSize = size === "xs" ? "text-xs" : "text-sm";
+
+  return (
+    <div className={cn("tabular-nums", textSize)}>
+      <div className="text-foreground">{formatSignedUsd(gain)}</div>
+      {cost > 0 ? (
+        <div
+          className={cn(
+            "mt-0.5 text-[10px] leading-none",
+            positive ? "text-brand-2" : "text-destructive"
+          )}
+        >
+          {formatSignedPct(pct)}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function PositionsTable({
   rows,
@@ -35,27 +83,18 @@ export function PositionsTable({
   }
 
   return (
-    <Table className="min-w-[760px]">
+    <Table className="min-w-[760px] text-xs">
       <TableHeader>
         <TableRow className="hover:bg-transparent border-border/80">
-          {[
-            "Company",
-            "Rounds",
-            "First purchase",
-            "Shares",
-            "Cost",
-            "FMV",
-            "Weight",
-            "Gain/Loss",
-          ].map((label, i) => (
+          {HEADERS.map((col) => (
             <TableHead
-              key={label}
+              key={col.label}
               className={cn(
-                "h-11 text-[11px] uppercase tracking-[0.06em] text-muted-foreground font-normal",
-                i >= 3 && "text-right"
+                "h-8 px-2.5 text-[10px] font-medium tracking-[0.06em] text-faint uppercase",
+                col.align === "right" && "text-right"
               )}
             >
-              {label}
+              {col.label}
             </TableHead>
           ))}
         </TableRow>
@@ -106,67 +145,71 @@ function CompanyBlock({
   totalFmv: number;
   onToggle: () => void;
 }) {
+  const cellPy = "py-2 px-2.5";
+
   return (
     <>
       <TableRow
         className={cn(
-          "border-border/70",
+          "border-border/60",
           expandable && "cursor-pointer",
-          inactive && "text-muted-foreground line-through",
-          isOpen && "border-b-0 bg-muted/30"
+          inactive && "opacity-50",
+          isOpen && "bg-secondary/50"
         )}
         onClick={expandable ? onToggle : undefined}
         aria-expanded={expandable ? isOpen : undefined}
       >
-        <TableCell className="font-medium text-foreground py-3.5">
-          <span className="inline-flex items-center gap-2">
+        <TableCell className={cn(cellPy, "font-medium text-foreground")}>
+          <span className="inline-flex items-center gap-1.5">
             {expandable ? (
               <ChevronRight
                 className={cn(
-                  "size-3.5 text-muted-foreground transition-transform duration-150",
+                  "size-3 shrink-0 text-faint transition-transform duration-150",
                   isOpen && "rotate-90"
                 )}
               />
             ) : (
-              <span className="inline-block w-3.5" />
+              <span className="inline-block w-3 shrink-0" />
             )}
-            {row.name}
+            <span className={cn(inactive && "text-faint")}>
+              {row.name}
+            </span>
+            {inactive ? (
+              <Badge
+                variant="secondary"
+                className="rounded px-1 py-0 text-[9px] font-normal leading-4 text-faint"
+              >
+                Closed
+              </Badge>
+            ) : null}
           </span>
         </TableCell>
-        <TableCell className="text-muted-foreground py-3.5">
+        <TableCell className={cn(cellPy, "max-w-[9rem] text-muted-foreground")}>
           {expandable ? (
-            <Badge
-              variant="outline"
-              className="rounded-md font-normal text-muted-foreground"
-            >
+            <span className="text-muted-foreground">
               {row.roundCount} tranches
-            </Badge>
+            </span>
           ) : (
-            row.investmentTypes[0]
+            <span className="line-clamp-1">{row.investmentTypes[0]}</span>
           )}
         </TableCell>
-        <TableCell className="text-muted-foreground py-3.5">
+        <TableCell className={cn(cellPy, "text-muted-foreground tabular-nums")}>
           {formatDate(row.firstPurchaseDate)}
         </TableCell>
-        <TableCell className="text-right tabular-nums py-3.5">
+        <TableCell className={cn(cellPy, "text-right tabular-nums text-muted-foreground")}>
           {formatShares(row.shares)}
         </TableCell>
-        <TableCell className="text-right tabular-nums py-3.5">
+        <TableCell className={cn(cellPy, "text-right tabular-nums text-muted-foreground")}>
           {formatUsd(row.costBasis)}
         </TableCell>
-        <TableCell className="text-right tabular-nums py-3.5">
+        <TableCell className={cn(cellPy, "text-right font-medium tabular-nums text-foreground")}>
           {formatUsd(row.fmv)}
         </TableCell>
-        <TableCell className="text-right tabular-nums text-muted-foreground py-3.5">
+        <TableCell className={cn(cellPy, "text-right text-faint tabular-nums")}>
           {inactive ? "—" : formatPct(weight)}
         </TableCell>
-        <TableCell
-          className={cn(
-            "text-right tabular-nums py-3.5",
-            !inactive && (gain >= 0 ? "text-brand" : "text-destructive")
-          )}
-        >
-          {inactive ? "—" : formatUsd(gain)}
+        <TableCell className={cn(cellPy, "text-right")}>
+          <GainCell gain={gain} cost={row.costBasis} inactive={inactive} />
         </TableCell>
       </TableRow>
 
@@ -182,39 +225,38 @@ function CompanyBlock({
               <TableRow
                 key={pos.id}
                 className={cn(
-                  "border-border/50 bg-muted/20 hover:bg-muted/35",
-                  posInactive && "text-muted-foreground line-through"
+                  "border-border/40 bg-background/80",
+                  posInactive && "opacity-50"
                 )}
               >
-                <TableCell className="pl-10 text-muted-foreground text-xs py-2.5">
+                <TableCell className={cn(cellPy, "pl-8 text-[10px] text-faint")}>
                   Tranche
                 </TableCell>
-                <TableCell className="text-muted-foreground text-xs py-2.5">
-                  {pos.investment_type}
+                <TableCell className={cn(cellPy, "max-w-[9rem] text-[10px] text-muted-foreground")}>
+                  <span className="line-clamp-1">{pos.investment_type}</span>
                 </TableCell>
-                <TableCell className="text-muted-foreground text-xs py-2.5">
+                <TableCell className={cn(cellPy, "text-[10px] text-muted-foreground tabular-nums")}>
                   {formatDate(pos.purchase_date)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-xs py-2.5">
+                <TableCell className={cn(cellPy, "text-right text-[10px] tabular-nums text-muted-foreground")}>
                   {formatShares(pos.shares == null ? null : Number(pos.shares))}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-xs py-2.5">
+                <TableCell className={cn(cellPy, "text-right text-[10px] tabular-nums text-muted-foreground")}>
                   {formatUsd(posCost)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-xs py-2.5">
+                <TableCell className={cn(cellPy, "text-right text-[10px] font-medium tabular-nums text-foreground")}>
                   {formatUsd(posFmv)}
                 </TableCell>
-                <TableCell className="text-right tabular-nums text-xs text-muted-foreground py-2.5">
+                <TableCell className={cn(cellPy, "text-right text-[10px] text-faint tabular-nums")}>
                   {posInactive ? "—" : formatPct(posWeight)}
                 </TableCell>
-                <TableCell
-                  className={cn(
-                    "text-right tabular-nums text-xs py-2.5",
-                    !posInactive &&
-                      (posGain >= 0 ? "text-brand" : "text-destructive")
-                  )}
-                >
-                  {posInactive ? "—" : formatUsd(posGain)}
+                <TableCell className={cn(cellPy, "text-right")}>
+                  <GainCell
+                    gain={posGain}
+                    cost={posCost}
+                    inactive={posInactive}
+                    size="xs"
+                  />
                 </TableCell>
               </TableRow>
             );

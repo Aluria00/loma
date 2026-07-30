@@ -1,38 +1,50 @@
-import { LoginDotfield } from "@/components/LoginDotfield";
 import { LoginForm } from "@/components/LoginForm";
-import { ThemeToggle } from "@/components/ThemeProvider";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-6">
-      <LoginDotfield />
-      <div className="relative z-2 w-full max-w-[400px]">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-6 py-16">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,color-mix(in_srgb,var(--brand)_12%,transparent),transparent)]"
+      />
+
+      <div className="relative z-10 w-full max-w-[400px]">
         <a
           href="/"
-          className="t-brand mb-9 block text-center text-brand no-underline"
+          className="mb-10 block text-center font-[family-name:var(--font-newsreader)] text-[26px] font-medium tracking-[-0.01em] text-brand no-underline"
         >
           Loma
         </a>
 
-        <Card className="relative z-2 border-border bg-card shadow-sm">
-          <CardContent className="px-8 py-9">
-            <p className="t-eyebrow mb-3.5 text-brand-2">LP Portal</p>
-            <h1 className="t-title mb-2.5 text-foreground">Sign in</h1>
-            <p className="t-lead mb-6 text-muted-foreground">
-              Use your partner email and password.
+        <Card className="gap-0 border-border bg-card py-0 shadow-sm">
+          <CardHeader className="px-8 pt-8 pb-2">
+            <p className="mb-2 text-xs font-medium tracking-[0.14em] text-brand-2 uppercase">
+              LP Portal
             </p>
-
+            <CardTitle className="font-[family-name:var(--font-newsreader)] text-[28px] font-normal tracking-[-0.02em]">
+              Sign in
+            </CardTitle>
+            <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+              Partner credentials only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-8 pt-4 pb-8">
             <LoginForm />
 
-            <p className="t-caption mt-6 text-center text-muted-foreground/80">
+            <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
               Access is limited to existing Loma partners.
-              <br />
               <br />
               New partners:{" "}
               <a
                 href="mailto:partners@loma.capital"
-                className="t-link text-brand-2 no-underline border-b border-brand-2/45"
+                className="font-medium text-brand-2 underline-offset-4 hover:underline"
               >
                 partners@loma.capital
               </a>
@@ -42,13 +54,11 @@ export default function LoginPage() {
 
         <a
           href="/"
-          className="t-link mt-6 block text-center text-muted-foreground/80 no-underline transition-colors hover:text-muted-foreground"
+          className="mt-6 block text-center text-sm text-muted-foreground no-underline transition-colors hover:text-foreground"
         >
           ← Back to site
         </a>
       </div>
-
-      <ThemeToggle />
     </div>
   );
 }

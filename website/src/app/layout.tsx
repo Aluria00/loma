@@ -28,10 +28,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="dark"
-      className={`${geistSans.variable} ${newsreader.variable} dark h-full`}
+      data-theme="light"
+      className={`${geistSans.variable} ${newsreader.variable} h-full`}
     >
-      <body className="min-h-full">
+      <body className="min-h-full font-sans antialiased">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

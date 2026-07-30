@@ -1,16 +1,25 @@
-import { SignOutButton } from "@/components/SignOutButton";
+import { AllocationBar } from "@/components/AllocationBar";
+import { PortalHeader } from "@/components/PortalHeader";
 import { PositionsTable } from "@/components/PositionsTable";
-import { ThemeToggle } from "@/components/ThemeProvider";
 import {
+  formatInteger,
+  formatSignedPct,
+  formatSignedUsd,
   formatUsd,
+  gainPct,
   groupPositionsByCompany,
   summarizeCompanies,
   type PositionRow,
 } from "@/lib/portfolio";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default async function PortfolioPage() {
   const supabase = await createClient();
@@ -50,10 +59,16 @@ export default async function PortfolioPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12 md:px-10">
-        <p className="text-sm text-destructive">
-          Could not load positions: {error.message}
-        </p>
+      <main className="min-h-screen bg-background">
+        <PortalHeader name={profile?.full_name} email={profile?.email} />
+        <div className="mx-auto max-w-6xl px-6 py-12 md:px-10">
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-base">Could not load positions</CardTitle>
+              <CardDescription>{error.message}</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
       </main>
     );
   }
@@ -79,93 +94,88 @@ export default async function PortfolioPage() {
   });
   const companyRows = groupPositionsByCompany(rows);
   const summary = summarizeCompanies(companyRows);
+  const summaryGainPct = gainPct(summary.gain, summary.cost);
 
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-6 md:px-10">
-          <a href="/" className="t-brand text-brand no-underline">
-            Loma
-          </a>
-          <div className="flex items-center gap-5">
-            <div className="text-right">
-              <div className="text-xs text-foreground">
-                {profile?.full_name || "Partner"}
-              </div>
-              <div className="text-xs text-muted-foreground">{profile?.email}</div>
-            </div>
-            <SignOutButton />
-          </div>
+      <PortalHeader name={profile?.full_name} email={profile?.email} />
+
+      <div className="mx-auto max-w-6xl px-6 pt-8 pb-5 md:px-10">
+        <h1 className="font-[family-name:var(--font-newsreader)] text-[28px] leading-tight font-normal tracking-[-0.02em] text-muted-foreground">
+          Your positions
+        </h1>
+
+        <div className="mt-4">
+          <p
+            className="font-[family-name:var(--font-newsreader)] text-[36px] leading-none tracking-tight text-foreground tabular-nums md:text-[40px]"
+          >
+            {formatUsd(summary.fmv)}
+          </p>
+          <p className="mt-1 text-sm tabular-nums">
+            <span
+              className={
+                summary.gain >= 0 ? "text-brand-2" : "text-destructive"
+              }
+            >
+              {formatSignedUsd(summary.gain)}
+            </span>
+            <span className="text-faint">
+              {" "}
+              ({formatSignedPct(summaryGainPct)})
+            </span>
+          </p>
+          <p className="mt-3 text-xs text-faint">
+            <span>
+              Cost basis{" "}
+              <span className="tabular-nums text-muted-foreground">
+                {formatUsd(summary.cost)}
+              </span>
+            </span>
+            <span className="mx-2 text-border">·</span>
+            <span>
+              {formatInteger(summary.count)}{" "}
+              {summary.count === 1 ? "company" : "companies"}
+            </span>
+            <span className="mx-2 text-border">·</span>
+            <span>Marked to latest FMV</span>
+          </p>
         </div>
-      </header>
+      </div>
 
-      <section className="mx-auto max-w-6xl px-6 pt-14 pb-8 md:px-10">
-        <p className="t-eyebrow mb-3 text-brand-2">LP Portal</p>
-        <h1 className="t-title text-foreground">Your positions</h1>
-        <p className="t-lead mt-2 max-w-xl text-muted-foreground">
-          Portfolio holdings as of the latest marked fair-market values.
-        </p>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryStat label="Companies" value={String(summary.count)} />
-          <SummaryStat label="Cost basis" value={formatUsd(summary.cost)} />
-          <SummaryStat label="Fair market value" value={formatUsd(summary.fmv)} />
-          <SummaryStat
-            label="Unrealized gain/loss"
-            value={formatUsd(summary.gain)}
-            accent={summary.gain >= 0}
-          />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-6 pb-20 md:px-10">
-        <Card className="border-border bg-card/80 shadow-none">
-          <CardContent className="p-0 sm:p-1">
+      <section className="mx-auto max-w-6xl px-6 pb-16 md:px-10">
+        <Card className="gap-0 !overflow-visible border-0 bg-card py-0 shadow-none">
+          <CardHeader className="gap-0 space-y-0 px-4 pt-4 pb-0 sm:px-5">
+            <CardTitle className="text-base font-medium tracking-tight text-foreground">
+              Portfolio
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-visible px-0 pt-0 pb-0">
             {companyRows.length === 0 ? (
-              <p className="t-lead px-6 py-12 text-center text-muted-foreground">
+              <p className="px-5 py-12 text-center text-sm text-muted-foreground">
                 No positions yet.
               </p>
             ) : (
-              <div className="px-2 py-2 sm:px-4 sm:py-3">
-                <PositionsTable rows={companyRows} totalFmv={summary.fmv} />
-              </div>
+              <>
+                <div className="overflow-visible px-4 py-4 sm:px-5">
+                  <AllocationBar rows={companyRows} totalFmv={summary.fmv} />
+                </div>
+                <div className="overflow-x-auto border-t border-border px-1 sm:px-2">
+                  <p className="px-2.5 pt-2.5 pb-1 text-[10px] text-faint sm:px-3">
+                    Rows with multiple tranches can be expanded.
+                  </p>
+                  <PositionsTable rows={companyRows} totalFmv={summary.fmv} />
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
-        <Separator className="mt-8 opacity-40" />
-        <p className="mt-4 text-xs text-muted-foreground">
-          Values reflect marked fair-market estimates and may change.
+
+        <p className="mt-6 text-[11px] leading-relaxed text-faint">
+          Values reflect marked fair-market estimates and may change. This page
+          is for informational purposes only and does not constitute an offer or
+          solicitation.
         </p>
       </section>
-
-      <ThemeToggle />
     </main>
-  );
-}
-
-function SummaryStat({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-}) {
-  return (
-    <Card className="border-border bg-card shadow-none">
-      <CardContent className="px-4 py-4">
-        <p className="text-[11px] uppercase tracking-[0.06em] text-muted-foreground">
-          {label}
-        </p>
-        <p
-          className={`mt-2 font-[family-name:var(--font-newsreader)] text-[22px] tabular-nums tracking-tight ${
-            accent ? "text-brand" : "text-foreground"
-          }`}
-        >
-          {value}
-        </p>
-      </CardContent>
-    </Card>
   );
 }

@@ -29,30 +29,78 @@ export type CompanyPositionRow = {
   positions: PositionRow[];
 };
 
+function isValidNumber(value: number | null | undefined): boolean {
+  return value != null && Number.isFinite(value);
+}
+
 export function formatUsd(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(value)) return "—";
+  if (!isValidNumber(value)) return "—";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
 export function formatShares(value: number | null | undefined): string {
-  if (value == null || Number.isNaN(value)) return "—";
+  if (!isValidNumber(value)) return "—";
   return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
     maximumFractionDigits: 6,
   }).format(value);
 }
 
-export function formatPct(value: number): string {
+/** Unsigned percentage (weights, allocation). */
+export function formatPct(value: number | null | undefined): string {
+  if (!isValidNumber(value)) return "—";
   return `${value.toFixed(2)}%`;
+}
+
+export function formatSignedUsd(value: number | null | undefined): string {
+  if (!isValidNumber(value)) return "—";
+  if (value === 0) return formatUsd(0);
+  const formatted = formatUsd(Math.abs(value));
+  return value > 0 ? `+${formatted}` : `-${formatted}`;
+}
+
+export function gainPct(gain: number, cost: number): number {
+  if (!Number.isFinite(gain) || !Number.isFinite(cost) || cost === 0) return 0;
+  return (gain / cost) * 100;
+}
+
+export function formatSignedPct(value: number | null | undefined): string {
+  if (!isValidNumber(value)) return "—";
+  if (value === 0) return "0.00%";
+  const rounded = Math.abs(value).toFixed(2);
+  return value > 0 ? `+${rounded}%` : `-${rounded}%`;
+}
+
+export function formatInteger(value: number | null | undefined): string {
+  if (!isValidNumber(value)) return "—";
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 export function formatDate(value: string | null): string {
   if (!value) return "—";
-  const [y, m, d] = value.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
+  if (!match) return "—";
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return "—";
+  if (m < 1 || m > 12 || d < 1 || d > 31) return "—";
+  const date = new Date(y, m - 1, d);
+  if (
+    date.getFullYear() !== y ||
+    date.getMonth() !== m - 1 ||
+    date.getDate() !== d
+  ) {
+    return "—";
+  }
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",

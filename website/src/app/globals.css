@@ -96,6 +96,7 @@
   --color-ring: var(--ring);
   --color-brand: var(--brand);
   --color-brand-2: var(--brand-2);
+  --color-faint: var(--faint);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
